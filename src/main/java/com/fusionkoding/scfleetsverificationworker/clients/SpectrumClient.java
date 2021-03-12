@@ -1,5 +1,6 @@
 package com.fusionkoding.scfleetsverificationworker.clients;
 
+import com.fusionkoding.scfleetsverificationworker.clients.exceptions.RsiRequestException;
 import com.fusionkoding.scfleetsverificationworker.clients.models.*;
 import com.fusionkoding.scfleetsverificationworker.config.PropertyConfig;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +14,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Optional;
 
 @Slf4j
@@ -32,18 +33,10 @@ public class SpectrumClient {
         String memberId = null;
 
         AutocompleteDto autocompleteDto = AutocompleteDto.builder().text(rsiHandle).build();
-
-        HttpHeaders headers = getHttpHeaders();
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(propertyConfig.getSpectrumClient().getBaseUrl() + propertyConfig.getSpectrumClient().getAutocompleteUri());
-
-        HttpEntity<AutocompleteDto> entity = new HttpEntity<>(autocompleteDto, headers);
-
-        String urlStr = builder.toUriString();
-        log.info("Getting member id: " + urlStr);
+        String urlStr = formUrlString(propertyConfig.getSpectrumClient().getBaseUrl() + propertyConfig.getSpectrumClient().getAutocompleteUri());
 
         try {
-            RsiResponse<SearchData> response = regularRestTemplate.exchange(urlStr, HttpMethod.POST ,entity, new ParameterizedTypeReference<RsiResponse<SearchData>>() {}).getBody();
+            RsiResponse<SearchData> response = sendSpectrumRequest(autocompleteDto, accountId, urlStr);
 
             Optional<Member> optionalMember = response.getData().getMembers().stream().filter(member -> member.getNickname().equals(rsiHandle)).findFirst();
 
@@ -52,8 +45,6 @@ public class SpectrumClient {
                 memberId = member.getId();
                 log.info("Found member id from " + member.getNickname() + ": " + memberId);
             }
-
-
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -61,26 +52,18 @@ public class SpectrumClient {
         return memberId;
     }
 
-    public String getLobbyId(String memberId, String accountId){
+    public String getLobbyId(String memberId, String accountId) {
         String lobbyId = "";
 
         LobbyInfoDto lobbyInfoDto = LobbyInfoDto.builder().member_id(memberId).build();
-
-        HttpHeaders headers = getSpectrumHttpHeaders(accountId);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(propertyConfig.getSpectrumClient().getBaseUrl() + propertyConfig.getSpectrumClient().getLobbyInfoUri());
-
-        HttpEntity<LobbyInfoDto> entity = new HttpEntity<>(lobbyInfoDto, headers);
-
-        String urlStr = builder.toUriString();
-        log.info("Getting lobby id: " + urlStr);
+        String urlStr = formUrlString(propertyConfig.getSpectrumClient().getBaseUrl() + propertyConfig.getSpectrumClient().getLobbyInfoUri());
 
         try {
-            RsiResponse<LobbyData> response = regularRestTemplate.exchange(urlStr, HttpMethod.POST ,entity, new ParameterizedTypeReference<RsiResponse<LobbyData>>() {}).getBody();
+            RsiResponse<LobbyData> response = sendSpectrumRequest(lobbyInfoDto, accountId, urlStr);
 
             LobbyData lobbyData = response.getData();
 
-            if(lobbyData != null ){
+            if (lobbyData != null) {
                 lobbyId = lobbyData.getId();
             }
 
@@ -91,26 +74,19 @@ public class SpectrumClient {
         return lobbyId;
     }
 
-    public String sendMessage(String lobbyId,String message, String accountId){
+    public String sendMessage(String lobbyId, String message, String accountId) {
         String messageId = "";
 
         MessageDto messageDto = buildMessageDto(lobbyId, message);
 
-        HttpHeaders headers = getSpectrumHttpHeaders(accountId);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(propertyConfig.getSpectrumClient().getBaseUrl() + propertyConfig.getSpectrumClient().getMessageUri());
-
-        HttpEntity<MessageDto> entity = new HttpEntity<>(messageDto, headers);
-
-        String urlStr = builder.toUriString();
-        log.info("Getting lobby id: " + urlStr);
+        String urlStr = formUrlString(propertyConfig.getSpectrumClient().getBaseUrl() + propertyConfig.getSpectrumClient().getMessageUri());
 
         try {
-            RsiResponse<LobbyData> response = regularRestTemplate.exchange(urlStr, HttpMethod.POST ,entity, new ParameterizedTypeReference<RsiResponse<LobbyData>>() {}).getBody();
+            RsiResponse<LobbyData> response = sendSpectrumRequest(messageDto, accountId, urlStr);
 
             LobbyData lobbyData = response.getData();
 
-            if(lobbyData != null ){
+            if (lobbyData != null) {
                 messageId = lobbyData.getId();
             }
 
@@ -119,6 +95,41 @@ public class SpectrumClient {
         }
 
         return messageId;
+    }
+
+    private String formUrlString(String url) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
+        String urlStr = builder.toUriString();
+        log.info("Getting member id: " + urlStr);
+        return urlStr;
+    }
+
+    private <T, O> RsiResponse<T> sendSpectrumRequest(O dto, String accountId, String urlStr) throws RsiRequestException {
+        try {
+            HttpEntity<O> entity = getEntity(dto, accountId);
+            RsiResponse<T> response = regularRestTemplate.exchange(urlStr, HttpMethod.POST, entity, new ParameterizedTypeReference<RsiResponse<T>>() {
+            }).getBody();
+
+            if (response.getSuccess() == "0") {
+                throw new RsiRequestException("Rsi request unsuccessful");
+            }
+
+            return response;
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            throw new RsiRequestException("Request Error: " + ex.getMessage());
+        }
+    }
+
+
+    private <R, P> RsiResponse<R> spectrumRequest(HttpEntity<P> entity, String urlStr) {
+        return (RsiResponse<R>) regularRestTemplate.exchange(urlStr, HttpMethod.POST, entity, new ParameterizedTypeReference<RsiResponse<P>>() {
+        }).getBody();
+    }
+
+    private <T> HttpEntity<T> getEntity(T dto, String accountId) {
+        HttpHeaders headers = getSpectrumHttpHeaders(accountId);
+        return new HttpEntity<>(dto, headers);
     }
 
     private MessageDto buildMessageDto(String lobbyId, String message) {
