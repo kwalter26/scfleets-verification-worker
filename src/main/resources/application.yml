@@ -10,7 +10,7 @@ spring:
     routingkey: "#"
     password:
     username:
-    virtual-host:
+    virtual-host: ${VIRTUAL}
     ssl:
       enabled: true
 basic-auth: ${BASICAUTH}
