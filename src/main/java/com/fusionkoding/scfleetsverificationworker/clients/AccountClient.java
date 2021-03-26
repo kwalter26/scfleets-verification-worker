@@ -4,7 +4,8 @@ import com.fusionkoding.scfleetsverificationworker.clients.models.RsiAuth;
 import com.fusionkoding.scfleetsverificationworker.config.PropertyConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,8 +19,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class AccountClient {
 
     private final PropertyConfig propertyConfig;
-
     private final RestTemplate authRestTemplate;
+    private final CacheManager cacheManager;
 
     @Cacheable("accountAuth")
     public RsiAuth getRsiAccountAuthById(String accountId){
@@ -43,5 +44,9 @@ public class AccountClient {
         }
 
         return rsiAccountDto;
+    }
+
+    public void invalidateAuth() {
+        cacheManager.getCacheNames().stream().forEach(cacheName->cacheManager.getCache(cacheName).clear());
     }
 }

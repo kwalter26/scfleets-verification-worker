@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class VerifyRequest {
+public class Verify {
     private String accountId;
     private String verificationCode;
     private String pilotId;

@@ -7,9 +7,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class RsiResponse<T> {
+public class SearchDataRsiResponse {
     String success;
     String code;
     String msg;
-    T data;
+    SearchData data;
 }

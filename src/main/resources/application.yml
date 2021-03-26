@@ -1,12 +1,18 @@
 spring:
   rabbitmq:
-    addresses: ${RABBIT_URL}
-  cloud:
-    stream:
-      bindings:
-        rsiVerify-in-0:
-          destination: rsi-verify
-          group: v1-send-verify
+    host:
+    exchange:
+      verify: rsi-verify
+      auth: rsi-auth
+    queue:
+      verify: rsi-verify.v1-send-verify
+      auth: v1-auth-status
+    routingkey: "#"
+    password:
+    username:
+    virtual-host:
+    ssl:
+      enabled: true
 basic-auth: ${BASICAUTH}
 auth-url: ${AUTH_URL}
 grant: ${GRANT}
