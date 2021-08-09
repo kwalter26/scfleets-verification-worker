@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scfleets-verification-worker-deployment
+  labels:
+    app: scfleets-verification-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scfleets-verification-worker
+  template:
+    metadata:
+      labels:
+        app: scfleets-verification-worker
+    spec:
+      containers:
+        - name: scfleets-verification-worker
+          image: kwalter26/scfleets-verification-worker:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: scfleets-verification-worker-config
+          env:
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: cognito-client-id
+            - name: CLIENT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: cognito-client-secret
+            - name: RABBIT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: rabbitmq-addresses
+            - name: AUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: cognito-access-token-uri
+            - name: SCOPE
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: cognito-client-scope

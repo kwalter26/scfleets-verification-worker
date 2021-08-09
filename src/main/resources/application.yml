@@ -13,7 +13,7 @@ spring:
     virtual-host: ${VIRTUAL}
     ssl:
       enabled: true
-basic-auth: ${BASICAUTH}
+basic-auth: ${CLIENT_ID}:${CLIENT_PASS}
 auth-url: ${AUTH_URL}
 grant: ${GRANT}
 scope: ${SCOPE}
