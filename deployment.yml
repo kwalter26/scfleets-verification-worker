@@ -33,11 +33,6 @@ spec:
                 secretKeyRef:
                   name: scfleets-secrets
                   key: cognito-client-secret
-            - name: RABBIT_URL
-              valueFrom:
-                secretKeyRef:
-                  name: scfleets-secrets
-                  key: rabbitmq-addresses
             - name: AUTH_URL
               valueFrom:
                 secretKeyRef:
@@ -48,3 +43,18 @@ spec:
                 secretKeyRef:
                   name: scfleets-secrets
                   key: cognito-client-scope
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: rabbitmq-password
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: rabbitmq-username
+            - name: VIRTUAL
+              valueFrom:
+                secretKeyRef:
+                  name: scfleets-secrets
+                  key: rabbitmq-virtual

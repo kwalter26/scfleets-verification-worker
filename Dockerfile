@@ -1,5 +1,5 @@
-FROM openjdk:11-jre-slim-buster
-COPY "build/libs/*.jar" "/app/app.jar"
-WORKDIR /app/
-ENTRYPOINT ["java","-jar","app.jar"]
-EXPOSE 8080
+FROM openjdk:11-jre
+RUN mkdir -p /usr/local/app
+COPY build/libs/*.jar /usr/local/app/app.jar
+WORKDIR /usr/local/app
+CMD ["java", "-jar","app.jar"]
